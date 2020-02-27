@@ -29,13 +29,13 @@ class EarthquakeData(object):
         self.date = ''
         self.magnitude = 0.0
         self.map = Basemap() 
+
     
     def ReadAndGetData(self, filename):
         ''' 
         Reads the data file and filters as necessary 
         (e.g. only accept earthquakes with magnitude greater than 5 etc)
         '''
-
         # Use pandas to get the USGS data content
         df = pd.read_csv(filename)  # e.g. filename:  USGS_americas_1950_2017_over6.csv
 
@@ -51,7 +51,8 @@ class EarthquakeData(object):
         # markercolors...
         refdate = pd.Timestamp('1920-01-01') # hardwired limit for "historical EQs", still needs to be comkplemented by older catalog 
         df['markercolor'] = np.where(pd.to_datetime(df['time']) <= refdate,'blue','red') # to later assign colors depending on the date
-        df['colornumrgb'] = np.where(pd.to_datetime(df['time']) <= refdate,'2','0') # rgb =1 2 3 (cuirrently not used) 
+        df['markersize'] = df.apply(lambda x: sizemag(x['mag']), axis=1) # get the markersize only once
+        
         filteredDf = df[(df['latitude'] >= self.minLatitude) & 
                         (df['latitude'] <= self.maxLatitude) &
                         (df['longitude'] >= self.minLongitude - 3.4) &
@@ -71,7 +72,8 @@ class EarthquakeData(object):
         self.date        = (filteredDf.time).values.tolist()
         self.magnitude   = (filteredDf.mag).values.tolist()
         self.markercolor = (filteredDf.markercolor).values.tolist()
-        self.colornumrgb = (filteredDf.colornumrgb).values.tolist()
+        #self.colornumrgb = (filteredDf.colornumrgb).values.tolist()
+        self.markersize  = (filteredDf.markersize).values.tolist()
         # If you don't want filtering, then min/max can be obtained from the read data
         #self.minLongitude = min(self.longitude)
         #self.maxLongitude = max(self.longitude)
@@ -119,7 +121,8 @@ class EarthquakeData(object):
 
         plt.tight_layout()
 
-        return 
+        return
+
 
     def PlotEarthquakeLocationsOnMap(self, bPlotPoints):
         ''' Plot epicenters '''
@@ -130,23 +133,18 @@ class EarthquakeData(object):
             # to leave them with scaling according to the magnitude, I need to change this.... someday
             pstart = ARGS.npoints - ARGS.nsimpoints
             pend = ARGS.npoints
-            
-            #year    = pd.Timestamp( (self.date[ARGS.npoints].split('T'))[0] )  
-            #refyear = pd.Timestamp('2019-04-01')
-            #markeandrcolor = 'ro' # default marker and color: red circle
-            
-            #if year < refyear: # changes it for the older events
-            #    markerandcolor = 'bo'
-            #    print('historical EQ:',str(year),'symbol is changed to color blue. check script for details')
 
             x, y = self.map(self.longitude[0:pstart], self.latitude[0:pstart])
-            #print('pstart=',pstart)
             # looping through events and their assigned color, I tried to 'do a cmap' to avoid the loop,
             # but for some reason basmap was not having it. still not sure why.
-            for lon,lat,markcolor in zip(self.longitude[0:pstart], self.latitude[0:pstart], self.markercolor[0:pstart]):
+            print self.magnitude[0:pstart], self.markersize[0:pstart] 
+            #exit(1)  
+            for lon, lat, markcolor, marksize in zip(self.longitude[0:pstart], self.latitude[0:pstart], self.markercolor[0:pstart], 
+                    self.markersize[0:pstart]):
                 x, y = self.map(lon,lat)
-                colorstring=markcolor
-                self.map.plot(x, y, color=colorstring, marker='o', alpha=0.8, markersize=5, markeredgecolor='red',
+                colorstring = markcolor
+                markersizefloat = marksize 
+                self.map.plot(x, y, color=colorstring, marker='o', alpha=0.8, markersize=markersizefloat, markeredgecolor='red',
                         fillstyle='full', markeredgewidth=0.1)
 
             # Custom (most of the time bigger) font for the new point to be displayed
@@ -272,6 +270,9 @@ def ParseInput():
 
     return args
 
+def sizemag(x):
+    '''Custom scaling for magnitudes goes here'''
+    return float("{0:.1f}".format(x**2)) 
 
 def main():
 
