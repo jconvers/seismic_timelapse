@@ -135,10 +135,9 @@ class EarthquakeData(object):
             pend = ARGS.npoints
 
             x, y = self.map(self.longitude[0:pstart], self.latitude[0:pstart])
+            
             # looping through events and their assigned color, I tried to 'do a cmap' to avoid the loop,
             # but for some reason basmap was not having it. still not sure why.
-            print self.magnitude[0:pstart], self.markersize[0:pstart] 
-            #exit(1)  
             for lon, lat, markcolor, marksize in zip(self.longitude[0:pstart], self.latitude[0:pstart], self.markercolor[0:pstart], 
                     self.markersize[0:pstart]):
                 x, y = self.map(lon,lat)
