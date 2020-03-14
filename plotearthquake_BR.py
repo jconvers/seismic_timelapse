@@ -4,6 +4,7 @@
     2. page size for the map
     3. city names to highlight
 '''
+# last modified on Fri Mar 13 22:29:49 2020
 
 import os
 import argparse
@@ -36,20 +37,19 @@ class EarthquakeData(object):
         Reads the data file and filters as necessary 
         (e.g. only accept earthquakes with magnitude greater than 5 etc)
         '''
-        # Use pandas to get the USGS data content
-        df = pd.read_csv(filename)  # e.g. filename:  USGS_americas_1950_2017_over6.csv
+        # Use pandas to get the moho.iag data content
+        df = pd.read_csv(filename)  # e.g. filename:  brasil_1950_2017_over1.csv
 
         # Use hardcoded min/max Longitude/Latitude for the specific map output
         # One can also use other min/max values (up to the user)
         self.minLongitude, self.maxLongitude = (-74.963208, -33.333960)  # custom brazil
-        self.minLatitude, self.maxLatitude = (-35.080177,  5.901722 )   # custom brazil
+        self.minLatitude, self.maxLatitude = (-35.080177,  5.901722 )    # custom brazil
         
         # Filter data & get only those larget than X magnitude
-        #minMagnitudeDesired = 5.0  # too big of minMag, for Brazil, it needs to be lower
         minMagnitudeDesired = 0.50
         
         # markercolors...
-        refdate = pd.Timestamp('1920-01-01') # hardwired limit for "historical EQs", still needs to be comkplemented by older catalog 
+        refdate = pd.Timestamp('1920-01-01') # hardwired limit for "historical EQs", still needs to be complemented by older catalog 
         df['markercolor'] = np.where(pd.to_datetime(df['time']) <= refdate,'blue','red') # to later assign colors depending on the date
         df['markersize'] = df.apply(lambda x: sizemag(x['mag']), axis=1) # get the markersize only once
         
@@ -72,8 +72,8 @@ class EarthquakeData(object):
         self.date        = (filteredDf.time).values.tolist()
         self.magnitude   = (filteredDf.mag).values.tolist()
         self.markercolor = (filteredDf.markercolor).values.tolist()
-        #self.colornumrgb = (filteredDf.colornumrgb).values.tolist()
         self.markersize  = (filteredDf.markersize).values.tolist()
+        
         # If you don't want filtering, then min/max can be obtained from the read data
         #self.minLongitude = min(self.longitude)
         #self.maxLongitude = max(self.longitude)
@@ -166,8 +166,8 @@ class EarthquakeData(object):
         Write names of selected cities on the map after finding 
         their corresponding latitude/longitude value
         '''
-        # This part I brute-forced it, I just made a separate file and instead of reading it here, I copy-pasted
-        # the values I need to make it smarter
+        # This part I brute-forced it, I copy-pasted coordinates 
+        # suggested modification, just read from a file the lat,lon,names
         # Lat/lon coordinates of several cities that lie in the map of interest
         lats = [-23.550520,-22.906847,-3.106390,-3.718460,-8.055190,
                 -12.977749,-15.779380,-25.428360]
@@ -229,7 +229,6 @@ class EarthquakeData(object):
         Note that for (16,9) sized figure, dpi=120 gives (16,9)*120 =[1920,1080] pixels png file
         Similarly, dpi=240 gives (16,9)*240 =[3840,2160] pixels png file
         '''
-
         if bSaveFigs:
             OutFolder = 'Snapshots_{}'.format(ARGS.npoints - ARGS.npoints%100)
             if not os.path.exists(OutFolder):
@@ -283,7 +282,7 @@ def main():
     quake.PlotEarthquakeLocationsOnMap(True)
     quake.SaveSnapshotsToFile(True)
 
-    # This is a bonus feature - dumping the earthquake heatmap to google maps format [uses gmplot]
+    # This is a "bonus feature" - dumping the earthquake heatmap to google maps format [uses gmplot]
     # could not make it work in all machines, so its commented for now
     #quake.UseGMPLOTtoDumptoGoogleMap("earthquake_test.html")
 
